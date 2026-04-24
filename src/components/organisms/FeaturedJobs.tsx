@@ -1,14 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
 import { useVacanciesStore } from "@/stores/vacancies.store";
 import { VacancyCard } from "@/components/molecules/VacancyCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { MoveRight } from "lucide-react";
+import { MoveRight, Loader2 } from "lucide-react";
 
 export function FeaturedJobs() {
-  const { vacancies } = useVacanciesStore();
+  const { vacancies, fetchVacancies } = useVacanciesStore();
   const featured = vacancies.slice(0, 4);
+  const isLoading = vacancies.length === 0;
+
+  useEffect(() => {
+    fetchVacancies();
+  }, [fetchVacancies]);
 
   return (
     <section className="py-20 bg-muted/30">
@@ -33,9 +39,15 @@ export function FeaturedJobs() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          {featured.map((vacancy) => (
-            <VacancyCard key={vacancy.id} vacancy={vacancy} />
-          ))}
+          {isLoading ? (
+            <div className="col-span-2 flex justify-center items-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            featured.map((vacancy) => (
+              <VacancyCard key={vacancy.id} vacancy={vacancy} />
+            ))
+          )}
         </div>
 
         <div className="mt-10 text-center md:hidden">

@@ -16,6 +16,8 @@ export interface Company {
   industry: string;
   location: string;
   size?: string;
+  openVacancies?: number;
+  isFollowing?: boolean;
   contacts: {
     phone?: string;
     email?: string;

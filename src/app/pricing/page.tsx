@@ -115,16 +115,16 @@ export default function PricingPage() {
               </CardContent>
               
               <CardFooter className="px-8 pb-10">
-                <Button 
-                  className={`w-full h-12 rounded-xl font-bold transition-all ${
-                    plan.highlight 
-                      ? "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" 
-                      : "variant-outline"
+                <Link
+                  href="/contact"
+                  className={`w-full h-12 rounded-xl font-bold transition-all flex items-center justify-center text-sm ${
+                    plan.highlight
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+                      : "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                   }`}
-                  asChild
                 >
-                  <Link href="/contact">{plan.buttonText}</Link>
-                </Button>
+                  {plan.buttonText}
+                </Link>
               </CardFooter>
             </Card>
           ))}
@@ -134,9 +134,12 @@ export default function PricingPage() {
         <div className="mt-24 text-center">
           <h2 className="text-3xl font-bold mb-4">Сұрақтарыңыз бар ма?</h2>
           <p className="text-muted-foreground mb-8">Біздің менеджерлер сізге көмектесуге әрқашан дайын.</p>
-          <Button variant="outline" className="rounded-xl px-8 h-12" asChild>
-            <Link href="/contact">Квасу беру</Link>
-          </Button>
+          <Link
+            href="/contact"
+            className="rounded-xl px-8 h-12 inline-flex items-center justify-center border border-input bg-background hover:bg-accent hover:text-accent-foreground font-medium text-sm transition-colors"
+          >
+            Сұрақ беру
+          </Link>
         </div>
       </div>
     </main>

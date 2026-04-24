@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Vacancy } from '@/types';
-import { MOCK_VACANCIES } from '@/lib/mock-data';
 
 interface Filters {
   query: string;
@@ -16,7 +15,8 @@ interface VacanciesState {
   filters: Filters;
   
   // Actions
-  addVacancy: (vacancy: Vacancy) => void;
+  fetchVacancies: () => Promise<void>;
+  addVacancy: (vacancy: Vacancy) => Promise<void>;
   updateVacancy: (id: string, data: Partial<Vacancy>) => void;
   deleteVacancy: (id: string) => void;
   setFilter: (key: keyof Filters, value: string | number) => void;
@@ -35,12 +35,36 @@ const initialFilters: Filters = {
 export const useVacanciesStore = create<VacanciesState>()(
   persist(
     (set) => ({
-      vacancies: MOCK_VACANCIES,
+      vacancies: [],
       filters: initialFilters,
 
-      addVacancy: (vacancy) => set((state) => ({ 
-        vacancies: [vacancy, ...state.vacancies] 
-      })),
+      fetchVacancies: async () => {
+        try {
+          const res = await fetch('/api/vacancies');
+          if (res.ok) {
+            const data = await res.json();
+            set({ vacancies: data });
+          }
+        } catch (error) {
+          console.error("Failed to fetch vacancies", error);
+        }
+      },
+
+      addVacancy: async (vacancy) => {
+        try {
+          const res = await fetch('/api/vacancies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(vacancy),
+          });
+          if (res.ok) {
+            const saved = await res.json();
+            set((state) => ({ vacancies: [saved, ...state.vacancies] }));
+          }
+        } catch (error) {
+          console.error("Error creating vacancy", error);
+        }
+      },
 
       updateVacancy: (id, data) => set((state) => ({
         vacancies: state.vacancies.map(v => v.id === id ? { ...v, ...data } : v)

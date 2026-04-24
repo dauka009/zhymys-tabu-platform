@@ -2,7 +2,6 @@
 
 import { useAuthStore } from "@/stores/auth.store";
 import { useApplicationsStore } from "@/stores/applications.store";
-import { useVacanciesStore } from "@/stores/vacancies.store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TagBadge } from "@/components/atoms/TagBadge";
@@ -13,15 +12,20 @@ import { useState, useEffect } from "react";
 
 export default function ApplicationsPage() {
   const { user } = useAuthStore();
-  const { applications, withdraw } = useApplicationsStore();
-  const { vacancies } = useVacanciesStore();
+  const { applications, withdraw, fetchApplications } = useApplicationsStore();
   const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => setIsClient(true), []);
+  useEffect(() => {
+    setIsClient(true);
+    if (user?.id) {
+      fetchApplications(user.id);
+    }
+  }, [user?.id]);
 
   if (!isClient) return null;
 
-  const myApps = applications.filter(a => a.userId === user?.id);
+  // After fetchApplications, myApps already only contains this user's apps
+  const myApps = applications;
 
   const handleWithdraw = (id: string) => {
     if (confirm("Өтінішті қайтарып алғыңыз келетініне сенімдісіз бе?")) {
@@ -40,27 +44,24 @@ export default function ApplicationsPage() {
       {myApps.length > 0 ? (
         <div className="space-y-4">
           {myApps.map(app => {
-            const vacancy = vacancies.find(v => v.id === app.vacancyId);
+            // API returns vacancyTitle directly — no need to look up locally
+            const title = (app as any).vacancyTitle || 'Вакансия';
             return (
               <Card key={app.id} className="overflow-hidden border-l-4 border-l-primary hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row justify-between gap-6">
                     <div className="flex gap-4">
                       <div className="h-12 w-12 bg-muted rounded-xl flex items-center justify-center text-2xl shrink-0">
-                        {vacancy?.emoji || "💼"}
+                        💼
                       </div>
                       <div className="space-y-1">
                         <Link href={`/vacancies/${app.vacancyId}`} className="font-bold text-lg hover:text-primary transition-colors">
-                          {vacancy?.title || "Вакансия өшірілген"}
+                          {title}
                         </Link>
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Building2 className="h-3.5 w-3.5" />
-                            {vacancy?.company?.name || "Компания"}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {vacancy?.location || "Қазақстан"}
+                            Компания
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
@@ -71,20 +72,20 @@ export default function ApplicationsPage() {
                     </div>
 
                     <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 border-t md:border-t-0 pt-4 md:pt-0">
-                      <TagBadge 
-                        label={app.status === 'pending' ? 'Қаралуда' : app.status === 'accepted' ? 'Шақыру' : 'Бас тарту'} 
-                        variant={app.status === 'pending' ? 'blue' : app.status === 'accepted' ? 'green' : 'orange'} 
+                      <TagBadge
+                        label={app.status === 'pending' ? 'Қаралуда' : app.status === 'interview' ? 'Шақырылды' : 'Бас тартылды'}
+                        variant={app.status === 'pending' ? 'blue' : app.status === 'interview' ? 'green' : 'orange'}
                         className="text-xs uppercase px-3"
                       />
                       <div className="flex gap-2">
-                         <Button variant="ghost" size="icon" onClick={() => handleWithdraw(app.id)} className="text-muted-foreground hover:text-red-500 rounded-full h-8 w-8">
-                            <Trash2 className="h-4 w-4" />
-                         </Button>
-                         <Link href={`/vacancies/${app.vacancyId}`}>
-                           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary rounded-full h-8 w-8">
-                              <ExternalLink className="h-4 w-4" />
-                           </Button>
-                         </Link>
+                        <Button variant="ghost" size="icon" onClick={() => handleWithdraw(app.id)} className="text-muted-foreground hover:text-red-500 rounded-full h-8 w-8">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Link href={`/vacancies/${app.vacancyId}`}>
+                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary rounded-full h-8 w-8">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </div>

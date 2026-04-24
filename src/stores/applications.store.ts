@@ -8,7 +8,8 @@ interface ApplicationsState {
   resume: Resume | null;
   
   // Actions
-  apply: (application: Omit<Application, 'id' | 'date' | 'status'>) => void;
+  fetchApplications: (userId?: string) => Promise<void>;
+  apply: (application: Omit<Application, 'id' | 'date' | 'status'>) => Promise<void>;
   withdraw: (id: string) => void;
   updateStatus: (id: string, status: ApplicationStatus) => void;
   
@@ -24,20 +25,45 @@ export const useApplicationsStore = create<ApplicationsState>()(
       savedVacancies: [],
       resume: null,
 
-      apply: (appData) => set((state) => {
-        // Prevent double applying
-        if (state.applications.some(a => a.vacancyId === appData.vacancyId && a.userId === appData.userId)) {
-          return state;
+      fetchApplications: async (userId) => {
+        try {
+          const res = await fetch(`/api/applications${userId ? '?userId=' + userId : ''}`);
+          if (res.ok) {
+            const data = await res.json();
+            set({ applications: data });
+          }
+        } catch (error) {
+          console.error("Failed to fetch applications", error);
         }
+      },
 
-        const newApp: Application = {
-          ...appData,
-          id: `app_${Date.now()}`,
-          date: new Date().toISOString(),
-          status: 'pending',
-        };
-        return { applications: [newApp, ...state.applications] };
-      }),
+      apply: async (appData) => {
+        try {
+          // Prevent double applying locally first
+          if (useApplicationsStore.getState().applications.some(a => a.vacancyId === appData.vacancyId && a.userId === appData.userId)) {
+            alert('Сіз бұл вакансияға өтінім беріп қойдыңыз.');
+            return;
+          }
+
+          const res = await fetch('/api/applications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appData),
+          });
+          
+          if (res.ok) {
+            const newApp = await res.json();
+            set((state) => ({ applications: [newApp, ...state.applications] }));
+            alert('Өтінім сәтті жіберілді!');
+          } else {
+            const err = await res.json();
+            alert(err.error || 'Қате шықты');
+          }
+        } catch (error) {
+          console.error("Failed to apply", error);
+          alert('Сервермен байланыс жоқ');
+        }
+      },
 
       withdraw: (id) => set((state) => ({
         applications: state.applications.filter(a => a.id !== id)

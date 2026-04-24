@@ -29,16 +29,25 @@ export default function LoginPage() {
 
   const { register, handleSubmit, formState: { errors } } = form;
 
-  const onSubmit = (data: LoginFormValues) => {
-    const users = JSON.parse(localStorage.getItem('jumys_users_mock') || '[]');
-    const matched = users.find((u: any) => u.email === data.email.toLowerCase() && u.password === data.password);
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
 
-    if (matched) {
-      login(matched);
-      toast.success("Сәтті кірдіңіз! Қош келдіңіз!");
-      router.push("/cabinet");
-    } else {
-      toast.error("Қате: Email немесе пароль дұрыс емес");
+      if (res.ok) {
+        const { user } = await res.json();
+        login(user);
+        toast.success("Сәтті кірдіңіз! Қош келдіңіз!");
+        router.push("/cabinet");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Қате: Email немесе пароль дұрыс емес");
+      }
+    } catch (error) {
+      toast.error("Сервермен байланыс жоқ");
     }
   };
 
@@ -87,7 +96,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="password">Құпиясөз</Label>
-                <Link href="#" className="flex-1 text-right text-xs text-primary hover:underline">Ұмыттыңыз ба?</Link>
+                <Link href="/forgot-password" className="flex-1 text-right text-xs text-primary hover:underline">Ұмыттыңыз ба?</Link>
               </div>
               <div className="relative">
                 <Input id="password" type={showPassword ? "text" : "password"} placeholder="Құпиясөз" {...register("password")}

@@ -5,10 +5,10 @@ import { useApplicationsStore } from "@/stores/applications.store";
 import { useVacanciesStore } from "@/stores/vacancies.store";
 import { Button } from "@/components/ui/button";
 import { ApplicationStatus } from "@/types";
-import { FileText, Briefcase, Eye, TrendingUp } from "lucide-react";
+import { FileText, Briefcase, Eye, TrendingUp, Plus } from "lucide-react";
 import Link from "next/link";
 import { TagBadge } from "@/components/atoms/TagBadge";
-
+import { useState, useEffect } from "react";
 export default function CabinetPage() {
   const { user, role } = useAuthStore();
   const { applications, savedVacancies } = useApplicationsStore();
@@ -18,52 +18,85 @@ export default function CabinetPage() {
   const pendingApps = seekerApps.filter(a => a.status === 'pending');
   const savedCount = savedVacancies.length;
 
+  const [stats, setStats] = useState({
+    activeVacancies: 0,
+    newApplications: 0,
+    totalViews: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(role === 'employer');
+
+  useEffect(() => {
+    if (role === 'employer' && user?.id) {
+      fetch(`/api/employer/stats?employerId=${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          setStats(data);
+          setLoadingStats(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoadingStats(false);
+        });
+    }
+  }, [role, user?.id]);
+
   if (role === 'employer') {
     return (
       <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-10">
           <div>
-            <h2 className="font-heading text-2xl font-bold">Басты бақылау тақтасы</h2>
-            <p className="text-muted-foreground mt-1">Тайлайн мен статистикаңызды қараңыз</p>
+            <h2 className="font-heading text-3xl font-black tracking-tight">Басты бақылау тақтасы</h2>
+            <p className="text-muted-foreground mt-1 font-medium">Тайлайн мен статистикаңызды қараңыз</p>
           </div>
           <Link href="/cabinet/vacancies/new">
-            <Button className="bg-gradient-to-r from-primary to-indigo-600 font-bold">
-              Жаңа вакансия қосу
+            <Button className="h-12 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold shadow-xl shadow-primary/20 gap-2 border-0">
+              <Plus className="h-5 w-5" /> Жаңа вакансия қосу
             </Button>
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="p-6 rounded-2xl border bg-muted/20">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Briefcase className="h-6 w-6 text-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* Active Vacancies */}
+          <div className="group p-8 rounded-3xl border border-border/50 bg-card/40 backdrop-blur-sm hover:border-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/5">
+            <div className="flex items-center gap-6">
+              <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <Briefcase className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-3xl font-bold">12</div>
-                <div className="text-sm text-muted-foreground">Белсенді вакансия</div>
+                <div className="text-4xl font-black tracking-tighter">
+                  {loadingStats ? "..." : stats.activeVacancies}
+                </div>
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Белсенді вакансия</div>
               </div>
             </div>
           </div>
-          <div className="p-6 rounded-2xl border bg-muted/20">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-12 w-12 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                <FileText className="h-6 w-6 text-emerald-500" />
+
+          {/* New Applications */}
+          <div className="group p-8 rounded-3xl border border-border/50 bg-card/40 backdrop-blur-sm hover:border-emerald-500/30 transition-all hover:shadow-2xl hover:shadow-emerald-500/5">
+            <div className="flex items-center gap-6">
+              <div className="h-14 w-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                <FileText className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-3xl font-bold">48</div>
-                <div className="text-sm text-muted-foreground">Жаңа өтініштер</div>
+                <div className="text-4xl font-black tracking-tighter">
+                  {loadingStats ? "..." : stats.newApplications}
+                </div>
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Жаңа өтініштер</div>
               </div>
             </div>
           </div>
-          <div className="p-6 rounded-2xl border bg-muted/20">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-12 w-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                <Eye className="h-6 w-6 text-blue-500" />
+
+          {/* Total Views */}
+          <div className="group p-8 rounded-3xl border border-border/50 bg-card/40 backdrop-blur-sm hover:border-blue-500/30 transition-all hover:shadow-2xl hover:shadow-blue-500/5">
+            <div className="flex items-center gap-6">
+              <div className="h-14 w-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                <Eye className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-3xl font-bold">1.2K</div>
-                <div className="text-sm text-muted-foreground">Қаралымдар</div>
+                <div className="text-4xl font-black tracking-tighter">
+                  {loadingStats ? "..." : stats.totalViews > 999 ? `${(stats.totalViews / 1000).toFixed(1)}K` : stats.totalViews}
+                </div>
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Қаралымдар</div>
               </div>
             </div>
           </div>

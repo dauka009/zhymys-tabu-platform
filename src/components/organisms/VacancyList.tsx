@@ -7,11 +7,17 @@ import { useState, useMemo, useEffect } from "react";
 import Fuse from "fuse.js";
 import { SearchBar } from "@/components/molecules/index";
 
-export function VacancyList() {
-  const { vacancies, filters } = useVacanciesStore();
+export function VacancyList({ initialData }: { initialData?: any[] }) {
+  const { vacancies, filters, setVacancies } = useVacanciesStore();
   const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => setIsClient(true), []);
+  useEffect(() => {
+    setIsClient(true);
+    // Егер серверден (DB) нақты мәліметтер келген болса, Zustand-ты жаңартамыз
+    if (initialData && initialData.length > 0) {
+      setVacancies(initialData);
+    }
+  }, [initialData, setVacancies]);
 
   const filteredData = useMemo(() => {
     let result = vacancies;

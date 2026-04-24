@@ -4,14 +4,19 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { UserCircle, Briefcase, FileText, Settings, Heart, Bell } from "lucide-react";
+import { UserCircle, Briefcase, FileText, Settings, Heart, Bell, LogOut, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function CabinetLayout({ children }: { children: React.ReactNode }) {
-  const { isAuth, role } = useAuthStore();
+  const { isAuth, role, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -32,6 +37,7 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
 
   const employerNav = [
     { name: "Басты бақылау", href: "/cabinet", icon: UserCircle },
+    { name: "Менің компаниям", href: "/cabinet/company", icon: Building2 },
     { name: "Менің вакансияларым", href: "/cabinet/vacancies", icon: Briefcase },
     { name: "Кандидаттар", href: "/cabinet/candidates", icon: FileText },
     { name: "Баптаулар", href: "/cabinet/settings", icon: Settings },
@@ -46,12 +52,6 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
           <div>
             <h1 className="font-heading text-3xl font-extrabold md:text-4xl">Жеке кабинет</h1>
             <p className="mt-2 text-indigo-200">Сіздің мансаптық кеңістігіңіз</p>
-          </div>
-          <div className="hidden md:flex gap-4">
-            <button className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500" />
-            </button>
           </div>
         </div>
       </div>
@@ -80,6 +80,17 @@ export default function CabinetLayout({ children }: { children: React.ReactNode 
                     </Link>
                   );
                 })}
+
+                {/* Жүйеден шығу батырмасы */}
+                <div className="pt-2 mt-2 border-t">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full text-left font-medium text-red-500 hover:bg-red-500/10"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Жүйеден шығу
+                  </button>
+                </div>
               </nav>
             </div>
           </aside>

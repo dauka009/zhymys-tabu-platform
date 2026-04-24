@@ -50,29 +50,34 @@ export default function RegisterPage() {
 
   const strength = getPasswordStrength();
 
-  const onSubmit = (data: RegisterFormValues) => {
-    const users = JSON.parse(localStorage.getItem('jumys_users_mock') || '[]');
-    
-    if (users.find((u: any) => u.email === data.email.toLowerCase())) {
-      form.setError("email", { message: "Бұл email тіркелген! Басқа email енгізіңіз." });
-      toast.error("Қате: Email бұрын тіркелген");
-      return;
+  const onSubmit = async (data: RegisterFormValues) => {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          role: data.role,
+        }),
+      });
+
+      if (res.ok) {
+        const { user } = await res.json();
+        login(user);
+        toast.success("Тіркелу сәтті өтті! Қош келдіңіз!");
+        router.push("/cabinet");
+      } else {
+        const err = await res.json();
+        if (err.error?.includes('email')) {
+          form.setError("email", { message: err.error });
+        }
+        toast.error(err.error || "Тіркелу кезінде қате шықты");
+      }
+    } catch (error) {
+      toast.error("Сервермен байланыс жоқ");
     }
-
-    const newUser = {
-      id: `user_${Date.now()}`,
-      name: data.name,
-      email: data.email.toLowerCase(),
-      password: data.password, // In real app, never store plain text!
-      role: data.role,
-    };
-
-    users.push(newUser);
-    localStorage.setItem('jumys_users_mock', JSON.stringify(users));
-
-    login(newUser);
-    toast.success("Тіркелу сәтті өтті!");
-    router.push("/cabinet");
   };
 
   return (

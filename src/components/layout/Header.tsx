@@ -17,21 +17,82 @@ export function Header() {
 
   useEffect(() => setMounted(true), []);
 
-  const navLinks = [
+  const baseLinks = [
     { name: "Басты бет", href: "/" },
     { name: "Вакансиялар", href: "/vacancies" },
     { name: "Компаниялар", href: "/companies" },
+    { name: "Біз туралы", href: "/about" },
     { name: "Бағалар", href: "/pricing" },
     { name: "Байланыс", href: "/contact" },
   ];
 
-  const notifications = [
-    { title: "Жаңа өтініш", desc: "Сіздің вакансияңызға жаңа резюме түсті", time: "5 мин бұрын" },
-    { title: "Аккаунт расталды", desc: "Компанияңыздың профилі сәтті тексерілді", time: "2 сағ бұрын" },
-    { title: "Кеңес", desc: "Түйіндемені қалай дұрыс толтыру керек?", time: "1 күн бұрын" },
-  ];
+  // Рөлге байланысты навигация
+  const adminLink = { name: "⚙️ Admin", href: "/admin" };
+  const navLinks = isAuth && user?.role === "admin"
+    ? [...baseLinks, adminLink]
+    : baseLinks;
 
+  const [realNotifications, setRealNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  useEffect(() => {
+    if (isAuth && user?.id) {
+      const fetchNotifs = async () => {
+        try {
+          const res = await fetch(`/api/notifications?userId=${user.id}`);
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setRealNotifications(data);
+            setUnreadCount(data.filter(n => !n.is_read).length);
+          }
+        } catch (err) {
+          console.error('Failed to fetch notifications:', err);
+        }
+      };
+      fetchNotifs();
+      // Polling every 30 seconds for new notifications
+      const interval = setInterval(fetchNotifs, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuth, user?.id]);
+
+  const markAsRead = async (id?: string) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          notificationId: id, 
+          userId: user?.id,
+          all: !id 
+        })
+      });
+      
+      if (id) {
+        setRealNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } else {
+        setRealNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      }
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const getTimeAgo = (date: string) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffInMs = now.getTime() - past.getTime();
+    const diffInMin = Math.floor(diffInMs / 60000);
+    
+    if (diffInMin < 1) return 'Жаңа ғана';
+    if (diffInMin < 60) return `${diffInMin} мин бұрын`;
+    const diffInHr = Math.floor(diffInMin / 60);
+    if (diffInHr < 24) return `${diffInHr} сағ бұрын`;
+    return `${Math.floor(diffInHr / 24)} күн бұрын`;
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
@@ -90,36 +151,81 @@ export function Header() {
                   variant="ghost" 
                   size="icon" 
                   className="relative rounded-full"
-                  onClick={() => setNotifOpen(!notifOpen)}
+                  onClick={() => {
+                    setNotifOpen(!notifOpen);
+                    if (!notifOpen && unreadCount > 0) {
+                      // Optionally mark all as read when opening? 
+                      // For now we'll mark individual ones or let user click
+                    }
+                  }}
                 >
                   <Bell className="h-5 w-5" />
-                  <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-destructive" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                  )}
                 </Button>
 
                 {notifOpen && (
                   <div className="absolute top-12 right-0 w-80 bg-card border rounded-2xl shadow-2xl z-[100] p-4 animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center mb-4 pb-2 border-b">
                        <h4 className="font-bold">Хабарламалар</h4>
-                       <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">3 ЖАҢА</span>
+                       {unreadCount > 0 && (
+                         <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase">
+                           {unreadCount} жаңа
+                         </span>
+                       )}
                     </div>
-                    <div className="space-y-4">
-                       {notifications.map((n, i) => (
-                         <div key={i} className="group cursor-pointer">
-                            <div className="flex justify-between items-start mb-0.5">
-                               <span className="text-sm font-bold group-hover:text-primary transition-colors">{n.title}</span>
-                               <span className="text-[10px] text-muted-foreground">{n.time}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-1">{n.desc}</p>
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                       {realNotifications.length > 0 ? (
+                         realNotifications.map((n) => (
+                          <div 
+                            key={n.id} 
+                            className={`group cursor-pointer p-2 rounded-xl transition-colors ${n.is_read ? 'opacity-70' : 'bg-primary/5'}`}
+                            onClick={() => {
+                              if (!n.is_read) markAsRead(n.id);
+                              if (n.link) {
+                                setNotifOpen(false);
+                                // router.push(n.link); // if available
+                              }
+                            }}
+                          >
+                             <div className="flex justify-between items-start mb-0.5">
+                                <span className={`text-sm font-bold group-hover:text-primary transition-colors ${!n.is_read && 'text-primary'}`}>
+                                  {n.title}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                                  {getTimeAgo(n.created_at)}
+                                </span>
+                             </div>
+                             <p className="text-xs text-muted-foreground line-clamp-2">{n.content}</p>
+                          </div>
+                        ))
+                       ) : (
+                         <div className="text-center py-8 text-muted-foreground text-sm">
+                           Хабарламалар жоқ
                          </div>
-                       ))}
+                       )}
                     </div>
-                    <Button variant="outline" className="w-full mt-4 h-9 text-xs rounded-xl" onClick={() => setNotifOpen(false)}>Барлығын көру</Button>
+                    {unreadCount > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        className="w-full mt-4 h-8 text-[10px] rounded-lg text-primary" 
+                        onClick={() => markAsRead()}
+                      >
+                        Барлығын оқылды деп белгілеу
+                      </Button>
+                    )}
+                    <Button variant="outline" className="w-full mt-2 h-9 text-xs rounded-xl" onClick={() => setNotifOpen(false)}>Жабу</Button>
                   </div>
                 )}
               </div>
-              <Link href="/cabinet">
-                <Button className="rounded-full gap-2 shadow-md hover:shadow-lg transition-all">
-                  <span>Жеке кабинет</span>
+              <Link href={user?.role === "admin" ? "/admin" : "/cabinet"}>
+                <Button className={`rounded-full gap-2 shadow-md hover:shadow-lg transition-all ${
+                  user?.role === "admin"
+                    ? "bg-gradient-to-r from-red-500 to-rose-600 hover:opacity-90"
+                    : "bg-gradient-to-r from-primary to-indigo-600 hover:opacity-90"
+                }`}>
+                  <span>{user?.role === "admin" ? "Admin панель" : "Жеке кабинет"}</span>
                   <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full uppercase tracking-wider">{user?.role}</span>
                 </Button>
               </Link>
