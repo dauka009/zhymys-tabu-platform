@@ -95,7 +95,7 @@ export default function NewVacancyPage() {
 
               <div className="space-y-2">
                 <Label>Санат</Label>
-                <Select value={formData.category} onValueChange={v => setFormData(prev => ({ ...prev, category: v }))}>
+                <Select value={formData.category} onValueChange={v => setFormData(prev => ({ ...prev, category: v || "" }))}>
                   <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue placeholder="Санатты таңдаңыз" />
                   </SelectTrigger>
@@ -111,7 +111,7 @@ export default function NewVacancyPage() {
 
               <div className="space-y-2">
                 <Label>Жұмыс түрі</Label>
-                <Select value={formData.employment_type} onValueChange={v => setFormData(prev => ({ ...prev, employment_type: v }))}>
+                <Select value={formData.employment_type} onValueChange={v => setFormData(prev => ({ ...prev, employment_type: v || "" }))}>
                   <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue placeholder="Таңдаңыз" />
                   </SelectTrigger>
@@ -125,7 +125,7 @@ export default function NewVacancyPage() {
 
               <div className="space-y-2">
                 <Label>Жұмыс режимі</Label>
-                <Select value={formData.work_mode} onValueChange={v => setFormData(prev => ({ ...prev, work_mode: v }))}>
+                <Select value={formData.work_mode} onValueChange={v => setFormData(prev => ({ ...prev, work_mode: v || "" }))}>
                   <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue placeholder="Таңдаңыз" />
                   </SelectTrigger>
