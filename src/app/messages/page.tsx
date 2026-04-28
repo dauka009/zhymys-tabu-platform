@@ -574,7 +574,7 @@ function MessagesContent() {
                     </div>
                   )}
 
-                  <form onSubmit={sendMessage} className={`flex items-end gap-2 bg-muted/30 p-1 sm:p-2 rounded-2xl border transition-all relative ${isBlocked ? 'opacity-50 pointer-events-none' : 'focus-within:border-primary focus-within:ring-1 focus-within:ring-primary'}`}>
+                  <form onSubmit={sendMessage} className={`flex items-end gap-2 bg-muted/30 p-1 sm:p-2 rounded-2xl border transition-all relative w-full ${isBlocked ? 'opacity-50 pointer-events-none' : 'focus-within:border-primary focus-within:ring-1 focus-within:ring-primary'}`}>
                     <Button 
                       type="button" 
                       variant="ghost" 
