@@ -172,8 +172,8 @@ export default function CabinetPage() {
                     </div>
                   </div>
                   <TagBadge 
-                    label={app.status === 'pending' ? 'Қаралуда' : app.status === 'accepted' ? 'Шақыру' : 'Бас тарту'} 
-                    variant={app.status === 'pending' ? 'blue' : app.status === 'accepted' ? 'green' : 'orange'} 
+                    label={app.status === 'pending' ? 'Қаралуда' : app.status === 'interview' ? 'Шақырылды' : 'Бас тартылды'} 
+                    variant={app.status === 'pending' ? 'blue' : app.status === 'interview' ? 'green' : 'orange'} 
                   />
                 </div>
               );
