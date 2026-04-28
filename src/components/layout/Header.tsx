@@ -293,12 +293,36 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile menu button */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* Mobile menu button and icons */}
+        <div className="flex md:hidden items-center gap-1">
+          {isAuth && (
+            <>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative rounded-full"
+                onClick={() => setNotifOpen(!notifOpen)}
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                )}
+              </Button>
+              <Link href="/messages">
+                <Button variant="ghost" size="icon" className="relative rounded-full">
+                  <MessageSquare className="h-5 w-5" />
+                  {unreadMessagesCount > 0 && (
+                    <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  )}
+                </Button>
+              </Link>
+            </>
+          )}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-full"
           >
             {mounted && theme === "dark" ? <Sun className="h-5 w-5 text-amber-500" /> : <Moon className="h-5 w-5" />}
           </Button>
@@ -306,6 +330,7 @@ export function Header() {
             variant="ghost"
             size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="rounded-full"
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
