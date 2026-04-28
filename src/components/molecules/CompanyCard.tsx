@@ -18,7 +18,7 @@ export function CompanyCard({ company }: { company: Company }) {
 
   // Check follow status on mount
   useEffect(() => {
-    if (isAuth && user) {
+    if (isAuth && user?.id) {
       fetch(`/api/companies/${company.id}/follow?userId=${user.id}`)
         .then(res => res.json())
         .then(data => setIsFollowing(data.isFollowing))
@@ -69,7 +69,7 @@ export function CompanyCard({ company }: { company: Company }) {
         <div className="absolute top-0 right-0 p-4">
           <TagBadge 
             label={`${vacanciesCount} вакансия`} 
-            variant={vacanciesCount > 0 ? "blue" : "gray"} 
+            variant={vacanciesCount > 0 ? "blue" : "default"} 
             className="font-bold shadow-sm"
           />
         </div>
