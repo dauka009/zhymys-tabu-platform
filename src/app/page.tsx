@@ -60,7 +60,7 @@ export default function Home() {
       {/* Newsletter Section */}
       <section className="py-24 relative overflow-hidden bg-[#0F172A]">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/50 to-[#0F172A] -z-10" />
-        <div className="container px-4 relative z-10 text-center max-w-3xl">
+        <div className="container mx-auto px-4 relative z-10 text-center max-w-3xl">
           <div className="inline-block px-4 py-1.5 bg-indigo-500/20 text-indigo-300 rounded-full text-sm font-bold tracking-wide mb-6">
             📬 Тегін қызмет
           </div>

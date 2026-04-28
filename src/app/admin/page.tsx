@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import {
   Users, Briefcase, ShieldAlert, Trash2, Edit2,
   Search, RefreshCw, CheckCircle, XCircle, Activity,
-  ChevronDown, LogOut
+  ChevronDown, LogOut, MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ interface AdminVacancy {
 }
 interface AdminCompany {
   id: string; display_name: string; legal_name: string; owner_email: string; vacancies_count: number; created_at: string;
+  review_status: string;
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -40,6 +41,10 @@ const STATUS_COLORS: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700",
   ARCHIVED: "bg-red-100 text-red-700",
   CLOSED: "bg-amber-100 text-amber-700",
+  APPROVED: "bg-emerald-100 text-emerald-700",
+  PENDING_REVIEW: "bg-blue-100 text-blue-700",
+  NEEDS_FIX: "bg-amber-100 text-amber-700",
+  REJECTED: "bg-red-100 text-red-700",
 };
 
 export default function AdminPage() {
@@ -338,6 +343,14 @@ export default function AdminPage() {
                           <div className="flex gap-2 justify-end">
                             <Button
                               variant="ghost" size="icon"
+                              className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
+                              title="Хабарлама жіберу"
+                              onClick={() => router.push(`/messages?room=${u.id}`)}
+                            >
+                              <MessageSquare className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon"
                               className="h-8 w-8 rounded-lg hover:bg-blue-500/10 hover:text-blue-500"
                               title="Рөлді өзгерту"
                               onClick={() => setEditingUser(editingUser?.id === u.id ? null : u)}
@@ -379,7 +392,7 @@ export default function AdminPage() {
                       <th className="text-left p-4 font-semibold text-muted-foreground">Компания</th>
                       <th className="text-left p-4 font-semibold text-muted-foreground">Статус</th>
                       <th className="text-left p-4 font-semibold text-muted-foreground">Жарияланды</th>
-                      <th className="text-right p-4 font-semibold text-muted-foreground">Модерация</th>
+                      <th className="text-right p-4 font-semibold text-muted-foreground">Әрекет</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -402,20 +415,11 @@ export default function AdminPage() {
                         <td className="p-4">
                           <div className="flex gap-2 justify-end">
                             <Button
-                              variant="ghost" size="icon"
-                              className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 hover:text-emerald-500"
-                              title="Бекіту (PUBLISHED)"
-                              onClick={() => handleVacancyStatus(v.id, "PUBLISHED")}
+                              variant="outline" size="sm"
+                              className="h-8 rounded-lg"
+                              onClick={() => router.push(`/admin/vacancies/${v.id}/review`)}
                             >
-                              <CheckCircle className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost" size="icon"
-                              className="h-8 w-8 rounded-lg hover:bg-amber-500/10 hover:text-amber-500"
-                              title="Қабылдамау (ARCHIVED)"
-                              onClick={() => handleVacancyStatus(v.id, "ARCHIVED")}
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
+                              Қарау
                             </Button>
                             <Button
                               variant="ghost" size="icon"
@@ -451,7 +455,7 @@ export default function AdminPage() {
                       <th className="text-left p-4 font-semibold text-muted-foreground">Компания атауы</th>
                       <th className="text-left p-4 font-semibold text-muted-foreground">Заңды атауы</th>
                       <th className="text-left p-4 font-semibold text-muted-foreground">Иесі (Email)</th>
-                      <th className="text-left p-4 font-semibold text-muted-foreground">Вакансиялар саны</th>
+                      <th className="text-left p-4 font-semibold text-muted-foreground">Модерация</th>
                       <th className="text-right p-4 font-semibold text-muted-foreground">Әрекет</th>
                     </tr>
                   </thead>
@@ -465,9 +469,20 @@ export default function AdminPage() {
                         <td className="p-4 font-medium">{c.display_name}</td>
                         <td className="p-4 text-muted-foreground">{c.legal_name || "—"}</td>
                         <td className="p-4 text-muted-foreground">{c.owner_email || "—"}</td>
-                        <td className="p-4 font-bold">{c.vacancies_count}</td>
+                        <td className="p-4">
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${STATUS_COLORS[c.review_status] || "bg-gray-100 text-gray-700"}`}>
+                            {c.review_status || "PENDING_REVIEW"}
+                          </span>
+                        </td>
                         <td className="p-4">
                           <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="outline" size="sm"
+                              className="h-8 rounded-lg"
+                              onClick={() => router.push(`/admin/companies/${c.id}/review`)}
+                            >
+                              Қарау
+                            </Button>
                             <Button
                               variant="ghost" size="icon"
                               className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"

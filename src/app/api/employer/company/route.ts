@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       // Update existing
       const updateRes = await query(`
         UPDATE companies 
-        SET display_name = $1, legal_name = $2, logo_url = $3, description = $4, website_url = $5
+        SET display_name = $1, legal_name = $2, logo_url = $3, description = $4, website_url = $5, review_status = 'PENDING_REVIEW'
         WHERE owner_user_id = $6
         RETURNING *
       `, [displayName, legalName || displayName, logoUrl, description, websiteUrl, userId]);
@@ -50,8 +50,8 @@ export async function POST(request: Request) {
     } else {
       // Create new
       const insertRes = await query(`
-        INSERT INTO companies (owner_user_id, slug, display_name, legal_name, logo_url, description, website_url)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO companies (owner_user_id, slug, display_name, legal_name, logo_url, description, website_url, review_status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING_REVIEW')
         RETURNING *
       `, [userId, slug, displayName, legalName || displayName, logoUrl, description, websiteUrl]);
       

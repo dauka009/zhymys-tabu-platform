@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -29,6 +30,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { notificationId, userId, all } = body;
+    console.log('API /notifications PUT:', { notificationId, userId, all });
 
     if (all && userId) {
       await query(`UPDATE notifications SET is_read = TRUE WHERE user_id = $1`, [userId]);
@@ -45,5 +47,22 @@ export async function PUT(request: Request) {
   } catch (error) {
     console.error('API /notifications PUT error:', error);
     return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
+  }
+}
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    await query(`DELETE FROM notifications WHERE user_id = $1`, [userId]);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('API /notifications DELETE error:', error);
+    return NextResponse.json({ error: 'Failed to delete notifications' }, { status: 500 });
   }
 }

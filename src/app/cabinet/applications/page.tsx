@@ -78,6 +78,16 @@ export default function ApplicationsPage() {
                         className="text-xs uppercase px-3"
                       />
                       <div className="flex gap-2">
+                        {app.status === 'interview' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => window.location.href = '/messages'}
+                            className="rounded-xl border-primary text-primary hover:bg-primary/10 h-8 text-xs"
+                          >
+                            Чатқа өту
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => handleWithdraw(app.id)} className="text-muted-foreground hover:text-red-500 rounded-full h-8 w-8">
                           <Trash2 className="h-4 w-4" />
                         </Button>

@@ -11,10 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth.store";
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
+  const { isAuth, user } = useAuthStore();
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: { name: "", email: "", message: "" },
@@ -22,10 +24,26 @@ export default function ContactPage() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = form;
 
-  const onSubmit = (data: ContactFormValues) => {
-    console.log("Contact form sub:", data);
-    toast.success("Хабарламаңыз сәтті жіберілді! Жақын арада жауап береміз.");
-    reset();
+  const onSubmit = async (data: ContactFormValues) => {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          userId: user?.id
+        })
+      });
+
+      if (res.ok) {
+        toast.success("Хабарламаңыз сәтті жіберілді! Админ жақын арада жауап береді.");
+        reset();
+      } else {
+        toast.error("Қате орын алды. Қайта көріңіз.");
+      }
+    } catch (error) {
+      toast.error("Сервермен байланыс үзілді.");
+    }
   };
 
   return (
@@ -100,8 +118,8 @@ export default function ContactPage() {
 
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <Card className="border-0 shadow-xl lg:h-full">
-              <CardContent className="p-8 md:p-12">
+            <Card className="border-0 shadow-xl lg:h-full flex flex-col">
+              <CardContent className="p-8 md:p-12 flex-1">
                 <h2 className="text-3xl font-extrabold mb-2">Хабарлама қалдырыңыз</h2>
                 <p className="text-muted-foreground mb-10">Біздің команда 24 сағат ішінде сізге жауап береді.</p>
                 
@@ -139,6 +157,22 @@ export default function ContactPage() {
                   </Button>
                 </form>
               </CardContent>
+              <div className="p-8 md:p-12 border-t bg-primary/5 rounded-b-xl">
+                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                       <h4 className="font-bold text-lg mb-1">Тікелей чат арқылы сөйлесу</h4>
+                       <p className="text-sm text-muted-foreground">Администратормен нақты уақытта байланысыңыз</p>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        window.location.href = '/messages?room=support';
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 rounded-xl h-12 shadow-lg shadow-indigo-200"
+                    >
+                      Чатты бастау
+                    </Button>
+                 </div>
+              </div>
             </Card>
           </div>
 

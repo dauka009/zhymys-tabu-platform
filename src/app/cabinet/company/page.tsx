@@ -22,6 +22,9 @@ export default function CompanyPage() {
     description: "",
     websiteUrl: "",
   });
+  const [reviewStatus, setReviewStatus] = useState<string | null>(null);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewFields, setReviewFields] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (user?.id) {
@@ -42,6 +45,9 @@ export default function CompanyPage() {
             description: data.company.description || "",
             websiteUrl: data.company.website_url || "",
           });
+          setReviewStatus(data.company.review_status);
+          setReviewComment(data.company.review_comment || "");
+          setReviewFields(typeof data.company.review_fields === "string" ? JSON.parse(data.company.review_fields) : (data.company.review_fields || {}));
         }
       }
     } catch (error) {
@@ -64,6 +70,7 @@ export default function CompanyPage() {
 
       if (res.ok) {
         toast.success("Компания мәліметтері сәтті сақталды!");
+        fetchCompany();
       } else {
         const err = await res.json();
         toast.error(err.error || "Қате шықты");
@@ -75,21 +82,46 @@ export default function CompanyPage() {
     }
   };
 
+  const getStatusBadge = () => {
+    switch (reviewStatus) {
+      case "APPROVED": return <div className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase">Расталды</div>;
+      case "PENDING_REVIEW": return <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase">Тексерілуде</div>;
+      case "NEEDS_FIX": return <div className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold uppercase">Түзетуді қажет етеді</div>;
+      case "REJECTED": return <div className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold uppercase">Қабылданбады</div>;
+      default: return null;
+    }
+  };
+
   if (fetching) {
     return <div className="p-8 flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
 
   return (
     <div className="p-8">
-      <div className="mb-8 flex items-center gap-4">
-        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-          <Building2 className="h-6 w-6" />
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <Building2 className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="font-heading text-2xl font-bold">Менің компаниям</h2>
+            <p className="text-muted-foreground">Компанияңыз туралы ақпаратты толтырыңыз</p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-heading text-2xl font-bold">Менің компаниям</h2>
-          <p className="text-muted-foreground">Компанияңыз туралы ақпаратты толтырыңыз</p>
-        </div>
+        <div>{getStatusBadge()}</div>
       </div>
+
+      {(reviewStatus === "NEEDS_FIX" || reviewStatus === "REJECTED") && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
+          <h3 className="font-bold mb-2">Модератор ескертуі:</h3>
+          <p className="text-sm mb-4">{reviewComment || "Қателерді түзетіп қайта жіберіңіз."}</p>
+          <ul className="list-disc pl-5 text-sm space-y-1">
+            {Object.entries(reviewFields).map(([k, v]) => (
+              <li key={k}><b>{k}:</b> {v}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <Card className="border-border/50 bg-card/30 backdrop-blur-sm">
         <CardContent className="p-8">
@@ -155,7 +187,7 @@ export default function CompanyPage() {
             <div className="pt-4 flex justify-end">
               <Button type="submit" disabled={loading} className="rounded-xl px-12 h-12 gap-2 shadow-lg shadow-primary/20">
                 {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-                Сақтау
+                {reviewStatus === "NEEDS_FIX" ? "Түзетіп қайта жіберу" : "Сақтау"}
               </Button>
             </div>
           </form>

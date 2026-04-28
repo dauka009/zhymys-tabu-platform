@@ -31,14 +31,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // Optional: send notification to user about status change
     try {
       const appRes = await query(`
-        SELECT a.user_id, v.title 
+        SELECT a.user_id as candidate_id, v.title, v.company_id, c.owner_user_id as employer_id
         FROM applications a
         JOIN vacancies v ON a.vacancy_id = v.id
+        JOIN companies c ON v.company_id = c.id
         WHERE a.id = $1
       `, [id]);
       
       if (appRes.rowCount && appRes.rowCount > 0) {
-         const { user_id, title } = appRes.rows[0];
+         const { candidate_id, title, company_id, employer_id } = appRes.rows[0];
          let content = '';
          if (status.toLowerCase() === 'interview') {
            content = `Құттықтаймыз! Сіздің "${title}" вакансиясына өтініміңіз қабылданды (Шақырылды).`;
@@ -46,10 +47,50 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
            content = `Өкінішке орай, сіздің "${title}" вакансиясына өтініміңіз қабылданбады.`;
          }
          
+         
          await query(`
-           INSERT INTO notifications (user_id, title, content, type, link)
-           VALUES ($1, $2, $3, 'application_status', $4)
-         `, [user_id, 'Өтінім мәртебесі өзгерді', content, '/cabinet/applications']);
+           INSERT INTO notifications (user_id, title, body, type, link)
+           VALUES ($1, $2, $3, 'APPLICATION_STATUS_CHANGED', $4)
+         `, [candidate_id, 'Өтінім мәртебесі өзгерді', content, '/cabinet']);
+
+         // Егер шақырылса, бірден чат бөлмесін ашып, автоматты хат жібереміз
+         if (status.toLowerCase() === 'interview') {
+           // Тексереміз, мүмкін бөлме бар шығар?
+           let roomRes = await query(`
+             SELECT r.id
+             FROM message_rooms r
+             JOIN message_participants p1 ON r.id = p1.room_id AND p1.user_id = $1
+             JOIN message_participants p2 ON r.id = p2.room_id AND p2.user_id = $2
+             WHERE r.type = 'DIRECT'
+             LIMIT 1
+           `, [employer_id, candidate_id]);
+
+           let roomId = roomRes.rows[0]?.id;
+
+           if (!roomId) {
+             const newRoom = await query(`
+               INSERT INTO message_rooms (type, company_id)
+               VALUES ('DIRECT', $1)
+               RETURNING id
+             `, [company_id]);
+             roomId = newRoom.rows[0].id;
+
+             await query(`
+               INSERT INTO message_participants (room_id, user_id)
+               VALUES ($1, $2), ($1, $3)
+             `, [roomId, employer_id, candidate_id]);
+           }
+
+           // Жұмыс берушінің атынан хат жіберу
+           const msgContent = `Сәлеметсіз бе! Сізді "${title}" вакансиясы бойынша сұхбатқа шақырамыз.`;
+           await query(`
+             INSERT INTO messages (room_id, sender_id, type, content)
+             VALUES ($1, $2, 'TEXT', $3)
+           `, [roomId, employer_id, msgContent]);
+
+           // Бөлменің соңғы хат уақытын жаңарту
+           await query(`UPDATE message_rooms SET last_message_at = NOW() WHERE id = $1`, [roomId]);
+         }
       }
     } catch (e) {
       console.error('Notification error:', e);

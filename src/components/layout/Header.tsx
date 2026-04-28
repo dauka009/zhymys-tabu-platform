@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, Menu, Moon, Sun, X, Bell } from "lucide-react";
+import { Briefcase, Menu, Moon, Sun, X, Bell, MessageSquare } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -27,20 +27,21 @@ export function Header() {
   ];
 
   // Рөлге байланысты навигация
-  const adminLink = { name: "⚙️ Admin", href: "/admin" };
+  const adminLink = { name: "Admin", href: "/admin" };
   const navLinks = isAuth && user?.role === "admin"
     ? [...baseLinks, adminLink]
     : baseLinks;
 
   const [realNotifications, setRealNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
     if (isAuth && user?.id) {
       const fetchNotifs = async () => {
         try {
-          const res = await fetch(`/api/notifications?userId=${user.id}`);
+          const res = await fetch(`/api/notifications?userId=${user.id}&t=${Date.now()}`, { cache: 'no-store' });
           const data = await res.json();
           if (Array.isArray(data)) {
             setRealNotifications(data);
@@ -51,15 +52,33 @@ export function Header() {
         }
       };
       fetchNotifs();
+      
+      // Also fetch messages to get unread count
+      const fetchMessages = async () => {
+        try {
+          const res = await fetch(`/api/messages?userId=${user.id}&t=${Date.now()}`, { cache: 'no-store' });
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const totalUnread = data.reduce((sum: number, room: any) => sum + parseInt(room.unread_count || 0), 0);
+            setUnreadMessagesCount(totalUnread);
+          }
+        } catch (err) {}
+      };
+      fetchMessages();
+
       // Polling every 30 seconds for new notifications
-      const interval = setInterval(fetchNotifs, 30000);
+      const interval = setInterval(() => {
+        fetchNotifs();
+        fetchMessages();
+      }, 30000);
       return () => clearInterval(interval);
     }
-  }, [isAuth, user?.id]);
+  }, [isAuth, user?.id, pathname]);
 
   const markAsRead = async (id?: string) => {
+    console.log('markAsRead called with id:', id, 'userId:', user?.id);
     try {
-      await fetch('/api/notifications', {
+      const response = await fetch('/api/notifications', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -68,6 +87,8 @@ export function Header() {
           all: !id 
         })
       });
+      const resData = await response.json();
+      console.log('markAsRead API response:', resData);
       
       if (id) {
         setRealNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
@@ -78,6 +99,20 @@ export function Header() {
       }
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const clearNotifications = async () => {
+    if (!user?.id || !confirm('Барлық хабарламаларды өшіру?')) return;
+    try {
+      await fetch(`/api/notifications?userId=${user.id}`, {
+        method: 'DELETE'
+      });
+      setRealNotifications([]);
+      setUnreadCount(0);
+      setNotifOpen(false);
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
     }
   };
 
@@ -151,13 +186,7 @@ export function Header() {
                   variant="ghost" 
                   size="icon" 
                   className="relative rounded-full"
-                  onClick={() => {
-                    setNotifOpen(!notifOpen);
-                    if (!notifOpen && unreadCount > 0) {
-                      // Optionally mark all as read when opening? 
-                      // For now we'll mark individual ones or let user click
-                    }
-                  }}
+                  onClick={() => setNotifOpen(!notifOpen)}
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
@@ -165,15 +194,32 @@ export function Header() {
                   )}
                 </Button>
 
+                <Link href="/messages">
+                  <Button variant="ghost" size="icon" className="relative rounded-full ml-1">
+                    <MessageSquare className="h-5 w-5" />
+                    {unreadMessagesCount > 0 && (
+                      <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    )}
+                  </Button>
+                </Link>
+
                 {notifOpen && (
                   <div className="absolute top-12 right-0 w-80 bg-card border rounded-2xl shadow-2xl z-[100] p-4 animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center mb-4 pb-2 border-b">
                        <h4 className="font-bold">Хабарламалар</h4>
-                       {unreadCount > 0 && (
-                         <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase">
-                           {unreadCount} жаңа
-                         </span>
-                       )}
+                       <div className="flex items-center gap-2">
+                         <button 
+                           onClick={clearNotifications}
+                           className="text-[10px] text-destructive hover:underline font-bold uppercase"
+                         >
+                           Тазалау
+                         </button>
+                         {unreadCount > 0 && (
+                           <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase">
+                             {unreadCount} жаңа
+                           </span>
+                         )}
+                       </div>
                     </div>
                     <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
                        {realNotifications.length > 0 ? (
@@ -181,11 +227,11 @@ export function Header() {
                           <div 
                             key={n.id} 
                             className={`group cursor-pointer p-2 rounded-xl transition-colors ${n.is_read ? 'opacity-70' : 'bg-primary/5'}`}
-                            onClick={() => {
-                              if (!n.is_read) markAsRead(n.id);
+                            onClick={async () => {
+                              if (!n.is_read) await markAsRead(n.id);
                               if (n.link) {
                                 setNotifOpen(false);
-                                // router.push(n.link); // if available
+                                window.location.href = n.link;
                               }
                             }}
                           >
@@ -206,29 +252,32 @@ export function Header() {
                          </div>
                        )}
                     </div>
-                    {unreadCount > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        className="w-full mt-4 h-8 text-[10px] rounded-lg text-primary" 
-                        onClick={() => markAsRead()}
-                      >
-                        Барлығын оқылды деп белгілеу
-                      </Button>
-                    )}
-                    <Button variant="outline" className="w-full mt-2 h-9 text-xs rounded-xl" onClick={() => setNotifOpen(false)}>Жабу</Button>
+
+                    <Button 
+                      variant="outline" 
+                      className="w-full mt-2 h-9 text-xs rounded-xl" 
+                      onClick={async () => {
+                        await markAsRead();
+                        setNotifOpen(false);
+                      }}
+                    >
+                      Жабу
+                    </Button>
                   </div>
                 )}
               </div>
-              <Link href={user?.role === "admin" ? "/admin" : "/cabinet"}>
-                <Button className={`rounded-full gap-2 shadow-md hover:shadow-lg transition-all ${
-                  user?.role === "admin"
-                    ? "bg-gradient-to-r from-red-500 to-rose-600 hover:opacity-90"
-                    : "bg-gradient-to-r from-primary to-indigo-600 hover:opacity-90"
-                }`}>
-                  <span>{user?.role === "admin" ? "Admin панель" : "Жеке кабинет"}</span>
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full uppercase tracking-wider">{user?.role}</span>
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href="/cabinet">
+                  <Button className={`rounded-full gap-2 shadow-md hover:shadow-lg transition-all ${
+                    user?.role === "admin"
+                      ? "bg-gradient-to-r from-red-500 to-rose-600 hover:opacity-90"
+                      : "bg-gradient-to-r from-primary to-indigo-600 hover:opacity-90"
+                  }`}>
+                    <span>{user?.role === "admin" ? "Admin" : "Жеке кабинет"}</span>
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full uppercase tracking-wider">{user?.role}</span>
+                  </Button>
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">

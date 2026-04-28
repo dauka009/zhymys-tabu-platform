@@ -92,6 +92,28 @@ export default function CandidatesPage() {
                       className="px-3 py-1 font-bold uppercase text-[10px]"
                     />
                     
+                    {c.status === 'interview' && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => window.location.href = '/messages'}
+                        className="rounded-xl border-primary text-primary hover:bg-primary/10 h-9 mt-2 md:mt-0"
+                      >
+                        Чатқа өту
+                      </Button>
+                    )}
+
+                    {c.status !== 'pending' && (
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => updateStatus(c.id, 'pending')}
+                        className="rounded-xl h-9 mt-2 md:mt-0 text-xs text-muted-foreground"
+                      >
+                        Болдырмау (Қайтару)
+                      </Button>
+                    )}
+
                     {c.status === 'pending' && (
                       <div className="flex gap-2">
                         <Button 

@@ -51,22 +51,28 @@ export async function POST(request: Request) {
     const employerId = body.employerId;
     
     // Find the company owned by this user
-    let companyId;
+    let company;
     if (employerId) {
-      const compRes = await query(`SELECT id FROM companies WHERE owner_user_id = $1 LIMIT 1`, [employerId]);
-      companyId = compRes.rows[0]?.id;
+      const compRes = await query(`SELECT id, review_status FROM companies WHERE owner_user_id = $1 LIMIT 1`, [employerId]);
+      company = compRes.rows[0];
     }
 
-    if (!companyId) {
+    if (!company) {
        return NextResponse.json({ error: 'Алдымен компания құруыңыз керек (Баптаулар -> Менің компаниям)' }, { status: 400 });
     }
+
+    if (company.review_status !== 'APPROVED') {
+       return NextResponse.json({ error: 'Компания модерациядан өтпейінше вакансия қоса алмайсыз' }, { status: 403 });
+    }
+
+    const companyId = company.id;
 
     const insertSql = `
       INSERT INTO vacancies (
         company_id, slug, title, description, salary_min, salary_max, 
         employment_type, work_mode, emoji, category, status
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'PUBLISHED'
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'PENDING_REVIEW'
       ) RETURNING id, created_at
     `;
     const slug = (title.toLowerCase().replace(/ /g, '-') + '-' + Date.now()).substring(0, 50);
