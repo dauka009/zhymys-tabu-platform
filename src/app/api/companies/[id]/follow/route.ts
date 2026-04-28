@@ -68,7 +68,7 @@ export async function GET(
       [userId, companyId]
     );
 
-    return NextResponse.json({ isFollowing: result.rowCount > 0 });
+    return NextResponse.json({ isFollowing: (result.rowCount || 0) > 0 });
   } catch (error) {
     console.error('Check follow error:', error);
     return NextResponse.json({ isFollowing: false });
