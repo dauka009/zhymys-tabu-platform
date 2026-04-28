@@ -140,7 +140,7 @@ export async function POST(request: Request) {
         
         // 2. Create notification
         await query(`
-          INSERT INTO notifications (user_id, title, content, type, link)
+          INSERT INTO notifications (user_id, title, body, type, link)
           VALUES ($1, $2, $3, 'application', $4)
         `, [
           owner_user_id, 

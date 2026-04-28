@@ -73,7 +73,7 @@ export interface Resume {
   updatedAt: string;
 }
 
-export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
+export type ApplicationStatus = 'pending' | 'interview' | 'rejected';
 
 export interface Application {
   id: string;
