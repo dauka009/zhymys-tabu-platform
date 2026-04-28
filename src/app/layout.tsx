@@ -12,7 +12,7 @@ const inter = Inter({
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  subsets: ["latin", "cyrillic-ext"],
 });
 
 export const metadata: Metadata = {
