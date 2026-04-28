@@ -18,8 +18,8 @@ export default function EmployerVacanciesPage() {
   useEffect(() => {
     if (user?.id) {
       Promise.all([
-        fetch(`/api/vacancies?employerId=${user.id}`).then(res => res.json()),
-        fetch(`/api/employer/company?userId=${user.id}`).then(res => res.json())
+        fetch(`/api/vacancies?employerId=${user?.id}`).then(res => res.json()),
+        fetch(`/api/employer/company?userId=${user?.id}`).then(res => res.json())
       ])
         .then(([vacanciesData, companyData]) => {
           const vacanciesWithFields = (Array.isArray(vacanciesData) ? vacanciesData : (vacanciesData?.vacancies || [])).map((v: any) => ({

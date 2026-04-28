@@ -39,7 +39,7 @@ export default function CompanyDetailPage() {
       });
 
     // Check following status
-    if (isAuth && user) {
+    if (isAuth && user?.id) {
       fetch(`/api/companies/${id}/follow?userId=${user.id}`)
         .then(res => res.json())
         .then(data => setIsFollowing(data.isFollowing))

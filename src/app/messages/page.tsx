@@ -40,13 +40,13 @@ function MessagesContent() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              senderId: user.id,
+              senderId: user?.id,
               receiverId: adminId,
               content: 'Сәлеметсіз бе! Маған техникалық көмек қажет.'
             })
           });
           
-          const roomsRes = await fetch(`/api/messages?userId=${user.id}&t=${Date.now()}`, { cache: 'no-store' });
+          const roomsRes = await fetch(`/api/messages?userId=${user?.id}&t=${Date.now()}`, { cache: 'no-store' });
           if (roomsRes.ok) {
             const roomsData = await roomsRes.json();
             setRooms(roomsData);
@@ -94,6 +94,7 @@ function MessagesContent() {
   useEffect(() => {
     if (user?.id) {
       const fetchRooms = async () => {
+        if (!user?.id) return;
         const res = await fetch(`/api/messages?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
@@ -108,6 +109,7 @@ function MessagesContent() {
   useEffect(() => {
     if (selectedRoom?.room_id) {
       const fetchMessages = async () => {
+        if (!user?.id) return;
         const res = await fetch(`/api/messages/${selectedRoom.room_id}?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
@@ -170,7 +172,7 @@ function MessagesContent() {
     const tempId = Date.now();
     const tempMsg = {
       id: tempId,
-      sender_id: user.id,
+      sender_id: user?.id,
       content,
       created_at: new Date().toISOString(),
       reply_to_id: replyId,
@@ -186,7 +188,7 @@ function MessagesContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          senderId: user.id,
+          senderId: user?.id,
           receiverId: selectedRoom.participant_id,
           content,
           replyToId: replyId,
@@ -211,6 +213,7 @@ function MessagesContent() {
             
             // Тізімді жаңарту
             const fetchRooms = async () => {
+              if (!user?.id) return;
               const res = await fetch(`/api/messages?userId=${user.id}`);
               if (res.ok) {
                 const roomsData = await res.json();

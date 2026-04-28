@@ -27,7 +27,7 @@ export default function CabinetPage() {
 
   useEffect(() => {
     if (role === 'employer' && user?.id) {
-      fetch(`/api/employer/stats?employerId=${user.id}`)
+      fetch(`/api/employer/stats?employerId=${user?.id}`)
         .then(res => res.json())
         .then(data => {
           setStats(data);

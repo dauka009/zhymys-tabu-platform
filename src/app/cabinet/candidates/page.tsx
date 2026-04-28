@@ -15,7 +15,7 @@ export default function CandidatesPage() {
 
   useEffect(() => {
     if (user?.id) {
-      fetch(`/api/applications?employerId=${user.id}`)
+      fetch(`/api/applications?employerId=${user?.id}`)
         .then(res => res.json())
         .then(data => {
           setCandidates(data);
